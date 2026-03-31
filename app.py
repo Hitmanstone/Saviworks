@@ -68,9 +68,9 @@ def show_login():
             try:
                 res = supabase.auth.sign_in_with_password({"email": email, "password": password})
                 st.session_state.user = res.user
-                st.rerun()   # Removed success message to avoid conflict
+                st.rerun()   # Direct rerender - no conflicting messages
             except:
-                st.error("Invalid email or password")
+                st.error("Invalid email or password. Please try again.")
 
         if st.button("← Back"):
             st.session_state.page = "landing"
@@ -85,6 +85,7 @@ def show_dashboard():
         st.session_state.user = None
         st.rerun()
 
+    # Fetch holdings
     try:
         res = supabase.table("holdings").select("*").eq("user_id", st.session_state.user.id).execute()
         holdings = res.data
@@ -160,7 +161,7 @@ def show_dashboard():
                     st.success(f"Added {ticker.upper()} successfully!")
                     st.rerun()
                 except Exception as e:
-                    st.error("Error adding holding. Please check your table setup and RLS policies.")
+                    st.error("Failed to add holding. Please check RLS policies and user_id column.")
 
 if st.session_state.user is None:
     if "page" not in st.session_state or st.session_state.page == "landing":
