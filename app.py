@@ -6,55 +6,144 @@ import pandas as pd
 from datetime import datetime
 from supabase import create_client, Client
 
-st.set_page_config(page_title="Saviworks", page_icon="💼", layout="wide")
+# Page configuration
+st.set_page_config(page_title="SAVIWORKS", page_icon="💼", layout="centered")
 
 supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 
 if "user" not in st.session_state:
     st.session_state.user = None
 
-def add_logo():
-    st.markdown('<span style="color:#FF6B00; font-size:2.3rem; font-weight:900;">SAVIWORKS</span>', unsafe_allow_html=True)
+# Custom CSS - All capital letters, reasonable input width, gothic-style font
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Impact:wght@400;700&display=swap');
 
-# ==================== LOGIN & SIGNUP ====================
-def show_login():
-    add_logo()
-    st.title("Login")
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
-    if st.button("Login", type="primary"):
-        try:
-            res = supabase.auth.sign_in_with_password({"email": email, "password": password})
-            st.session_state.user = res.user
-            st.success("Logged in successfully!")
+    * {
+        font-family: 'Impact', 'Arial Black', sans-serif !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px;
+    }
+
+    .logo {
+        font-size: 3.8rem;
+        font-weight: 900;
+        color: #FF6B00;
+        text-align: center;
+        margin-bottom: 20px;
+        letter-spacing: 4px;
+    }
+
+    .input-box {
+        max-width: 420px;
+        margin: 0 auto;
+    }
+
+    .stTextInput > div > div > input {
+        max-width: 420px !important;
+        margin: 0 auto;
+    }
+
+    .stNumberInput > div {
+        max-width: 420px !important;
+        margin: 0 auto;
+    }
+
+    h1, h2, h3 {
+        text-align: center;
+    }
+
+    .stButton > button {
+        width: 100%;
+        max-width: 420px;
+        margin: 10px auto;
+        display: block;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+def add_centered_logo():
+    st.markdown('<div class="logo">SAVIWORKS</div>', unsafe_allow_html=True)
+
+# ==================== LANDING PAGE ====================
+def show_landing():
+    add_centered_logo()
+    st.markdown("<h1 style='text-align:center; color:white;'>SAVIWORKS</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; font-size:1.6rem; color:#A0D8FF;'>YOUR PORTFOLIO IN ONE PLACE.</p>", unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("SIGN UP", type="primary", use_container_width=True):
+            st.session_state.page = "signup"
             st.rerun()
-        except Exception as e:
-            st.error("Login failed. Please check your email and password.")
+        if st.button("LOGIN", use_container_width=True):
+            st.session_state.page = "login"
+            st.rerun()
 
+# ==================== SIGN UP PAGE ====================
 def show_signup():
-    add_logo()
-    st.title("Create Account")
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
-    confirm = st.text_input("Confirm Password", type="password")
-    if st.button("Create Account", type="primary"):
-        if password != confirm:
-            st.error("Passwords do not match")
-        else:
+    add_centered_logo()
+    st.markdown("<h2>SIGN UP</h2>", unsafe_allow_html=True)
+
+    with st.container():
+        st.markdown('<div class="input-box">', unsafe_allow_html=True)
+        email = st.text_input("EMAIL")
+        password = st.text_input("PASSWORD", type="password")
+        confirm = st.text_input("CONFIRM PASSWORD", type="password")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("← BACK"):
+            st.session_state.page = "landing"
+            st.rerun()
+    with col2:
+        if st.button("CREATE ACCOUNT", type="primary"):
+            if password != confirm:
+                st.error("PASSWORDS DO NOT MATCH")
+            elif len(password) < 6:
+                st.error("PASSWORD MUST BE AT LEAST 6 CHARACTERS")
+            else:
+                try:
+                    supabase.auth.sign_up({"email": email, "password": password})
+                    st.success("ACCOUNT CREATED! YOU CAN NOW LOGIN.")
+                    st.session_state.page = "login"
+                    st.rerun()
+                except Exception as e:
+                    st.error(str(e).upper())
+
+# ==================== LOGIN PAGE ====================
+def show_login():
+    add_centered_logo()
+    st.markdown("<h2>LOGIN</h2>", unsafe_allow_html=True)
+
+    with st.container():
+        st.markdown('<div class="input-box">', unsafe_allow_html=True)
+        email = st.text_input("EMAIL")
+        password = st.text_input("PASSWORD", type="password")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("← BACK"):
+            st.session_state.page = "landing"
+            st.rerun()
+    with col2:
+        if st.button("LOGIN", type="primary"):
             try:
-                supabase.auth.sign_up({"email": email, "password": password})
-                st.success("Account created! You can now login.")
-                st.session_state.page = "login"
+                res = supabase.auth.sign_in_with_password({"email": email, "password": password})
+                st.session_state.user = res.user
+                st.success("LOGGED IN SUCCESSFULLY!")
                 st.rerun()
-            except Exception as e:
-                st.error(str(e))
+            except Exception:
+                st.error("INVALID EMAIL OR PASSWORD. PLEASE TRY AGAIN.")
 
 # ==================== DASHBOARD ====================
 def show_dashboard():
-    add_logo()
-    st.title("My Portfolio")
+    add_centered_logo()
+    st.title("MY PORTFOLIO")
 
-    if st.button("Logout"):
+    if st.button("LOGOUT"):
         supabase.auth.sign_out()
         st.session_state.user = None
         st.rerun()
@@ -66,7 +155,6 @@ def show_dashboard():
     except:
         holdings = []
 
-    # Live data + calculations
     total_gbp = 0.0
     table_data = []
     pie_labels = []
@@ -90,63 +178,64 @@ def show_dashboard():
             pie_values.append(value_gbp)
 
             table_data.append({
-                "Ticker": h["ticker"],
-                "Quantity": round(h["quantity"], 4),
-                "Price Native": round(price, 4),
-                "Value GBP": round(value_gbp, 2)
+                "TICKER": h["ticker"],
+                "QUANTITY": round(h["quantity"], 4),
+                "PRICE NATIVE": round(price, 4),
+                "VALUE GBP": round(value_gbp, 2)
             })
 
-    # Top total
-    st.metric("Total Portfolio Value", f"£{total_gbp:,.2f}")
+    st.metric("TOTAL PORTFOLIO VALUE", f"£{total_gbp:,.2f}")
 
-    # Charts (empty when no holdings)
+    # Charts (empty state)
     col1, col2 = st.columns(2)
     with col1:
         if pie_values:
-            fig = px.pie(names=pie_labels, values=pie_values, title="Allocation")
+            fig = px.pie(names=pie_labels, values=pie_values, title="ALLOCATION")
             st.plotly_chart(fig, use_container_width=True)
         else:
-            st.info("Add holdings to see allocation pie chart")
+            st.info("ADD HOLDINGS TO SEE ALLOCATION CHART")
 
     with col2:
         dates = pd.date_range(end=datetime.today(), periods=30)
-        values = [total_gbp * 0.9 + i*300 for i in range(30)]
+        values = [total_gbp * 0.9 + i * 400 for i in range(30)]
         fig = go.Figure(go.Scatter(x=dates, y=values, fill='tozeroy', line=dict(color='#00BFFF')))
-        fig.update_layout(title="Portfolio Trend (simulated)", template="plotly_dark")
+        fig.update_layout(title="PORTFOLIO TREND", template="plotly_dark", height=400)
         st.plotly_chart(fig, use_container_width=True)
 
     # Holdings Table
-    st.subheader("Holdings")
+    st.subheader("YOUR HOLDINGS")
     if table_data:
         st.dataframe(pd.DataFrame(table_data), use_container_width=True, hide_index=True)
     else:
-        st.info("No holdings yet. Add some below.")
+        st.info("NO HOLDINGS YET. ADD YOUR FIRST ONE BELOW.")
 
-    # Inline Add Holding Form
-    st.subheader("Add New Holding")
-    with st.form("add_form"):
-        ticker = st.text_input("Ticker Symbol (e.g. BMNR, VUSA.L, AAPL)")
-        quantity = st.number_input("Quantity", min_value=0.0001, value=1.0, step=0.0001)
-        cost_price = st.number_input("Cost Price per share (optional)", min_value=0.0, value=0.0)
-        submitted = st.form_submit_button("Add to Portfolio")
-        if submitted and ticker:
-            try:
-                supabase.table("holdings").insert({
-                    "user_id": st.session_state.user.id,
-                    "ticker": ticker.upper().strip(),
-                    "quantity": float(quantity),
-                    "cost_price": float(cost_price)
-                }).execute()
-                st.success(f"✅ Added {ticker.upper()}")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Error adding holding: {str(e)}")
+    # Inline Add Form
+    st.subheader("ADD NEW HOLDING")
+    with st.form("add_form", clear_on_submit=True):
+        ticker = st.text_input("TICKER SYMBOL", placeholder="BMNR, VUSA.L, AAPL")
+        quantity = st.number_input("QUANTITY", min_value=0.0001, value=1.0, step=0.0001)
+        cost_price = st.number_input("COST PRICE PER SHARE (OPTIONAL)", min_value=0.0, value=0.0)
+        if st.form_submit_button("ADD TO PORTFOLIO"):
+            if ticker:
+                try:
+                    supabase.table("holdings").insert({
+                        "user_id": st.session_state.user.id,
+                        "ticker": ticker.upper().strip(),
+                        "quantity": float(quantity),
+                        "cost_price": float(cost_price) if cost_price > 0 else None
+                    }).execute()
+                    st.success(f"ADDED {ticker.upper()} SUCCESSFULLY!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"ERROR ADDING HOLDING: {str(e).upper()}")
 
 # ==================== MAIN FLOW ====================
 if st.session_state.user is None:
-    if "page" not in st.session_state or st.session_state.page in ["landing", "login"]:
-        show_login()   # Go straight to login for simplicity
+    if "page" not in st.session_state or st.session_state.page == "landing":
+        show_landing()
     elif st.session_state.page == "signup":
         show_signup()
+    elif st.session_state.page == "login":
+        show_login()
 else:
     show_dashboard()
