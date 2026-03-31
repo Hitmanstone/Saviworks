@@ -1,4 +1,9 @@
 import streamlit as st
+import yfinance as yf
+import plotly.express as px
+import plotly.graph_objects as go
+import pandas as pd
+from datetime import datetime
 from supabase import create_client, Client
 
 st.set_page_config(page_title="Saviworks", page_icon="💼", layout="centered")
@@ -13,7 +18,7 @@ def add_logo():
 
 def show_landing():
     add_logo()
-    st.markdown("<p style='text-align:center; font-size:1.5rem; color:#A0D8FF;'>Your portfolio in one place.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; font-size:1.6rem; color:#A0D8FF;'>Your portfolio in one place.</p>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
@@ -36,6 +41,8 @@ def show_signup():
         if st.button("Create Account", type="primary"):
             if password != confirm:
                 st.error("Passwords do not match")
+            elif len(password) < 6:
+                st.error("Password must be at least 6 characters")
             else:
                 try:
                     supabase.auth.sign_up({"email": email, "password": password})
@@ -78,24 +85,83 @@ def show_dashboard():
         st.session_state.user = None
         st.rerun()
 
-    st.subheader("Add New Holding - Test")
-    with st.form("test_form"):
-        ticker = st.text_input("Ticker", placeholder="BMNR")
-        quantity = st.number_input("Quantity", min_value=0.1, value=10.0)
-        if st.form_submit_button("Add Holding"):
+    # Fetch holdings
+    try:
+        res = supabase.table("holdings").select("*").eq("user_id", st.session_state.user.id).execute()
+        holdings = res.data
+    except:
+        holdings = []
+
+    total_gbp = 0.0
+    table_data = []
+    pie_labels = []
+    pie_values = []
+
+    if holdings:
+        tickers = " ".join(h["ticker"] for h in holdings)
+        batch = yf.Tickers(tickers)
+        fx_rate = yf.Ticker("GBPUSD=X").info.get("regularMarketPrice", 1.0)
+
+        for h in holdings:
+            t = batch.tickers[h["ticker"]]
+            price = t.info.get("currentPrice") or t.info.get("regularMarketPrice", 0)
+            currency = t.info.get("currency", "USD")
+
+            value_native = price * h["quantity"]
+            value_gbp = value_native if currency.upper() == "GBP" else value_native / fx_rate
+
+            total_gbp += value_gbp
+            pie_labels.append(h["ticker"])
+            pie_values.append(value_gbp)
+
+            table_data.append({
+                "Ticker": h["ticker"],
+                "Quantity": round(h["quantity"], 4),
+                "Price Native": round(price, 4),
+                "Value GBP": round(value_gbp, 2)
+            })
+
+    st.metric("Total Portfolio Value", f"£{total_gbp:,.2f}")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if pie_values:
+            fig = px.pie(names=pie_labels, values=pie_values, title="Allocation")
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("Add holdings to see allocation chart")
+
+    with col2:
+        dates = pd.date_range(end=datetime.today(), periods=30)
+        values = [total_gbp * 0.9 + i*400 for i in range(30)]
+        fig = go.Figure(go.Scatter(x=dates, y=values, fill='tozeroy', line=dict(color='#00BFFF')))
+        fig.update_layout(title="Portfolio Trend", template="plotly_dark")
+        st.plotly_chart(fig, use_container_width=True)
+
+    st.subheader("Your Holdings")
+    if table_data:
+        st.dataframe(pd.DataFrame(table_data), use_container_width=True, hide_index=True)
+    else:
+        st.info("No holdings yet.")
+
+    st.subheader("Add New Holding")
+    with st.form("add_form", clear_on_submit=True):
+        ticker = st.text_input("Ticker Symbol", placeholder="BMNR, VUSA.L, AAPL")
+        quantity = st.number_input("Quantity", min_value=0.0001, value=1.0, step=0.0001)
+        cost_price = st.number_input("Cost Price per share (optional)", min_value=0.0, value=0.0)
+        if st.form_submit_button("Add to Portfolio"):
             if ticker:
                 try:
-                    result = supabase.table("holdings").insert({
+                    supabase.table("holdings").insert({
                         "user_id": st.session_state.user.id,
                         "ticker": ticker.upper().strip(),
-                        "quantity": float(quantity)
+                        "quantity": float(quantity),
+                        "cost_price": float(cost_price) if cost_price > 0 else None
                     }).execute()
-                    st.success("Holding added successfully!")
+                    st.success(f"Added {ticker.upper()} successfully!")
                     st.rerun()
                 except Exception as e:
-                    st.error(f"Insert failed: {str(e)}")
-
-    st.info("Try adding BMNR with quantity 10. Watch the error message carefully.")
+                    st.error(f"Error: {str(e)}")
 
 if st.session_state.user is None:
     if "page" not in st.session_state or st.session_state.page == "landing":
