@@ -68,8 +68,7 @@ def show_login():
             try:
                 res = supabase.auth.sign_in_with_password({"email": email, "password": password})
                 st.session_state.user = res.user
-                st.success("Logged in successfully!")
-                st.rerun()
+                st.rerun()   # Removed success message to avoid conflict
             except:
                 st.error("Invalid email or password")
 
@@ -86,7 +85,6 @@ def show_dashboard():
         st.session_state.user = None
         st.rerun()
 
-    # Fetch holdings
     try:
         res = supabase.table("holdings").select("*").eq("user_id", st.session_state.user.id).execute()
         holdings = res.data
@@ -162,7 +160,7 @@ def show_dashboard():
                     st.success(f"Added {ticker.upper()} successfully!")
                     st.rerun()
                 except Exception as e:
-                    st.error("Error adding holding. Please make sure your table is set up correctly.")
+                    st.error("Error adding holding. Please check your table setup and RLS policies.")
 
 if st.session_state.user is None:
     if "page" not in st.session_state or st.session_state.page == "landing":
