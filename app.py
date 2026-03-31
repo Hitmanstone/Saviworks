@@ -9,7 +9,7 @@ if "user" not in st.session_state:
     st.session_state.user = None
 
 def add_logo():
-    st.markdown('<h1 style="text-align:center; color:#FF6B00; font-size:3.2rem; margin:40px 0 20px 0;">SAVIWORKS</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 style="text-align:center; color:#FF6B00; font-size:3.5rem; margin:40px 0 20px 0;">SAVIWORKS</h1>', unsafe_allow_html=True)
 
 def show_landing():
     add_logo()
@@ -39,7 +39,7 @@ def show_signup():
             else:
                 try:
                     supabase.auth.sign_up({"email": email, "password": password})
-                    st.success("Account created! Login now.")
+                    st.success("Account created! You can now login.")
                     st.session_state.page = "login"
                     st.rerun()
                 except Exception as e:
@@ -95,7 +95,7 @@ def show_dashboard():
                 except Exception as e:
                     st.error(f"Insert failed: {str(e)}")
 
-    st.info("If you can add a holding here, RLS is the issue. If not, table setup is wrong.")
+    st.info("Try adding BMNR with quantity 10. Watch the error message carefully.")
 
 if st.session_state.user is None:
     if "page" not in st.session_state or st.session_state.page == "landing":
