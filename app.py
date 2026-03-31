@@ -14,9 +14,9 @@ if "user" not in st.session_state:
     st.session_state.user = None
 
 def add_logo():
-    st.markdown('<h1 style="text-align:center; color:#FF6B00; font-size:3.5rem; margin-bottom:10px;">SAVIWORKS</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 style="text-align:center; color:#FF6B00; font-size:3.5rem; margin:20px 0;">SAVIWORKS</h1>', unsafe_allow_html=True)
 
-# ==================== LANDING PAGE ====================
+# Landing Page
 def show_landing():
     add_logo()
     st.markdown("<p style='text-align:center; font-size:1.6rem; color:#A0D8FF;'>Your portfolio in one place.</p>", unsafe_allow_html=True)
@@ -30,7 +30,7 @@ def show_landing():
             st.session_state.page = "login"
             st.rerun()
 
-# ==================== SIGN UP ====================
+# Signup
 def show_signup():
     add_logo()
     st.subheader("Create Account")
@@ -59,7 +59,7 @@ def show_signup():
             st.session_state.page = "landing"
             st.rerun()
 
-# ==================== LOGIN ====================
+# Login
 def show_login():
     add_logo()
     st.subheader("Login")
@@ -82,7 +82,7 @@ def show_login():
             st.session_state.page = "landing"
             st.rerun()
 
-# ==================== DASHBOARD ====================
+# Dashboard
 def show_dashboard():
     add_logo()
     st.title("My Portfolio")
@@ -170,7 +170,7 @@ def show_dashboard():
                 except Exception as e:
                     st.error(f"Error adding holding: {str(e)}")
 
-# ==================== MAIN FLOW ====================
+# Main flow
 if st.session_state.user is None:
     if "page" not in st.session_state or st.session_state.page == "landing":
         show_landing()
