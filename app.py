@@ -95,7 +95,7 @@ def show_dashboard():
                 except Exception as e:
                     st.error(f"Insert failed: {str(e)}")
 
-    st.info("If you can add a holding here without error, the RLS issue is fixed.")
+    st.info("If you can add a holding here, RLS is the issue. If not, table setup is wrong.")
 
 if st.session_state.user is None:
     if "page" not in st.session_state or st.session_state.page == "landing":
