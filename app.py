@@ -92,48 +92,40 @@ def show_dashboard():
     except:
         holdings = []
 
-    total_gbp = 0.0
+    total_value = 0.0
     table_data = []
-    pie_labels = []
-    pie_values = []
 
     if holdings:
         tickers = " ".join(h["ticker"] for h in holdings)
         batch = yf.Tickers(tickers)
-        fx_rate = yf.Ticker("GBPUSD=X").info.get("regularMarketPrice", 1.0)
 
         for h in holdings:
             t = batch.tickers[h["ticker"]]
             price = t.info.get("currentPrice") or t.info.get("regularMarketPrice", 0)
-            currency = t.info.get("currency", "USD")
 
-            value_native = price * h["quantity"]
-            value_gbp = value_native if currency.upper() == "GBP" else value_native / fx_rate
-
-            total_gbp += value_gbp
-            pie_labels.append(h["ticker"])
-            pie_values.append(value_gbp)
+            value = price * h["quantity"]
+            total_value += value
 
             table_data.append({
                 "Ticker": h["ticker"],
                 "Quantity": round(h["quantity"], 4),
-                "Price Native": round(price, 4),
-                "Value GBP": round(value_gbp, 2)
+                "Price": round(price, 4),
+                "Value": round(value, 2)
             })
 
-    st.metric("Total Portfolio Value", f"£{total_gbp:,.2f}")
+    st.metric("Total Portfolio Value", f"£{total_value:,.2f}")
 
     col1, col2 = st.columns(2)
     with col1:
-        if pie_values:
-            fig = px.pie(names=pie_labels, values=pie_values, title="Allocation")
+        if table_data:
+            fig = px.pie(names=[row["Ticker"] for row in table_data], values=[row["Value"] for row in table_data], title="Allocation")
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("Add holdings to see allocation chart")
 
     with col2:
         dates = pd.date_range(end=datetime.today(), periods=30)
-        values = [total_gbp * 0.9 + i*400 for i in range(30)]
+        values = [total_value * 0.9 + i*400 for i in range(30)]
         fig = go.Figure(go.Scatter(x=dates, y=values, fill='tozeroy', line=dict(color='#00BFFF')))
         fig.update_layout(title="Portfolio Trend", template="plotly_dark")
         st.plotly_chart(fig, use_container_width=True)
@@ -142,7 +134,7 @@ def show_dashboard():
     if table_data:
         st.dataframe(pd.DataFrame(table_data), use_container_width=True, hide_index=True)
     else:
-        st.info("No holdings yet.")
+        st.info("No holdings yet. Add your first one below.")
 
     st.subheader("Add New Holding")
     with st.form("add_form", clear_on_submit=True):
