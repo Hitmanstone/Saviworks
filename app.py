@@ -14,9 +14,8 @@ if "user" not in st.session_state:
     st.session_state.user = None
 
 def add_logo():
-    st.markdown('<h1 style="text-align:center; color:#FF6B00; font-size:3.5rem; margin:20px 0;">SAVIWORKS</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 style="text-align:center; color:#FF6B00; font-size:3.5rem; margin:30px 0 10px 0;">SAVIWORKS</h1>', unsafe_allow_html=True)
 
-# Landing Page
 def show_landing():
     add_logo()
     st.markdown("<p style='text-align:center; font-size:1.6rem; color:#A0D8FF;'>Your portfolio in one place.</p>", unsafe_allow_html=True)
@@ -30,11 +29,9 @@ def show_landing():
             st.session_state.page = "login"
             st.rerun()
 
-# Signup
 def show_signup():
     add_logo()
     st.subheader("Create Account")
-
     col = st.columns([1,2,1])[1]
     with col:
         email = st.text_input("Email")
@@ -59,11 +56,9 @@ def show_signup():
             st.session_state.page = "landing"
             st.rerun()
 
-# Login
 def show_login():
     add_logo()
     st.subheader("Login")
-
     col = st.columns([1,2,1])[1]
     with col:
         email = st.text_input("Email")
@@ -82,7 +77,6 @@ def show_login():
             st.session_state.page = "landing"
             st.rerun()
 
-# Dashboard
 def show_dashboard():
     add_logo()
     st.title("My Portfolio")
@@ -92,7 +86,6 @@ def show_dashboard():
         st.session_state.user = None
         st.rerun()
 
-    # Fetch holdings
     try:
         res = supabase.table("holdings").select("*").eq("user_id", st.session_state.user.id).execute()
         holdings = res.data
@@ -170,7 +163,6 @@ def show_dashboard():
                 except Exception as e:
                     st.error(f"Error adding holding: {str(e)}")
 
-# Main flow
 if st.session_state.user is None:
     if "page" not in st.session_state or st.session_state.page == "landing":
         show_landing()
